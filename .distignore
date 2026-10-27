@@ -8,3 +8,4 @@ build
 README.md
 CHANGELOG.md
 .DS_Store
+phpcs.xml.dist

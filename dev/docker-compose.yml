@@ -12,7 +12,7 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: '1'
     volumes: [db:/var/lib/mysql]
   wordpress:
-    image: wordpress:php8.3-apache
+    image: wordpress:php8.4-apache
     depends_on: [db]
     ports: ['8088:80']
     environment:
@@ -25,7 +25,7 @@ services:
       - wp:/var/www/html
       - ..:/var/www/html/wp-content/plugins/wulopay-woocommerce:ro
   cli:
-    image: wordpress:cli-php8.3
+    image: wordpress:cli-php8.4
     depends_on: [wordpress]
     user: '33:33'
     environment:

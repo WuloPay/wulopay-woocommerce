@@ -4,7 +4,8 @@ Accept Visa and Mastercard in a WooCommerce store with WuloPay. The shopper pays
 (3-D Secure included) and returns to the order confirmation; the order is confirmed by a signed webhook and checked
 again with WuloPay when the shopper comes back. Card details never touch the store.
 
-Requires PHP 8.2+, WordPress 6.6+ and WooCommerce 9.0+ (tested with WordPress 7.1, WooCommerce 11.2, PHP 8.3).
+Requires PHP 8.3+, WordPress 6.6+ and WooCommerce 9.0+ (tested with WordPress 7.1, WooCommerce 11.2, PHP 8.4.27).
+Use PHP 8.4 or 8.5 on its latest patch release; the plugin warns store managers when PHP lacks critical security fixes.
 Payments are in ZAR.
 
 ## Install
@@ -33,7 +34,7 @@ WULOPAY_KEY_ID=wk_... WULOPAY_SECRET=... sh dev/setup.sh     # store at http://l
 The sandbox accepts `http://localhost` return URLs. WuloPay can't reach a local webhook URL; use a tunnel, or rely
 on the return check while developing.
 
-Checks run in CI: PHP lint (8.2 to 8.5), WordPress coding standards (WordPress-Extra), PHP compatibility (8.2+).
+Checks run in CI: PHP lint (8.3 to 8.5), WordPress coding standards (WordPress-Extra), PHP compatibility (8.3+).
 
 ## Security
 

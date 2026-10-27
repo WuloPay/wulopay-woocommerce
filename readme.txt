@@ -3,7 +3,7 @@ Contributors: wulopay
 Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
-Requires PHP: 8.2
+Requires PHP: 8.3
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -22,6 +22,9 @@ WuloPay's secure payment page, pays (3-D Secure is handled there), and comes bac
 * Your branding on the payment page when WuloPay enables it for your account.
 
 You need a WuloPay merchant account. Payments are in South African rand (ZAR).
+
+Keep PHP up to date: use PHP 8.4 or 8.5 on its latest patch release. The plugin warns you in the admin if your
+PHP release has known critical security flaws.
 
 == Installation ==
 
