@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: PHP lint
+        run: find . -name '*.php' -not -path './dev/*' -print0 | xargs -0 -n1 php -l
+
+  standards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+      - name: WordPress coding standards and PHP compatibility
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --no-progress wp-coding-standards/wpcs:^3.1 phpcompatibility/phpcompatibility-wp:"*"
+          BIN=$(composer global config bin-dir --absolute)
+          $BIN/phpcs --standard=WordPress-Extra --extensions=php --ignore=lib/,dev/ .
+          $BIN/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.2- --extensions=php --ignore=lib/,dev/ .
+
+  package:
+    needs: [lint, standards]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/wulopay-woocommerce
+          rsync -a --exclude-from=.distignore ./ build/wulopay-woocommerce/
+          (cd build && zip -qr wulopay-woocommerce.zip wulopay-woocommerce)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wulopay-woocommerce
+          path: build/wulopay-woocommerce.zip
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" build/wulopay-woocommerce.zip --clobber

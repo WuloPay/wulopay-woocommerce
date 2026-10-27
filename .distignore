@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+.distignore
+.gitattributes
+dev
+build
+README.md
+CHANGELOG.md
+.DS_Store
