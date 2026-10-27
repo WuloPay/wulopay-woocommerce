@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ['8.2', '8.3', '8.4', '8.5']
+        php: ['8.3', '8.4', '8.5']
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -39,8 +39,7 @@ jobs:
           composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require --no-progress wp-coding-standards/wpcs:^3.1 phpcompatibility/phpcompatibility-wp:"*"
           BIN=$(composer global config bin-dir --absolute)
-          $BIN/phpcs --standard=WordPress-Extra --extensions=php --ignore=lib/,dev/ .
-          $BIN/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.2- --extensions=php --ignore=lib/,dev/ .
+          $BIN/phpcs   # rules in phpcs.xml.dist
 
   package:
     needs: [lint, standards]
