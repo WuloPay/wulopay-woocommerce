@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,8 @@ WuloPay's secure payment page, pays (3-D Secure is handled there), and comes bac
 * Full and partial refunds from the WooCommerce order screen.
 * Works with the classic and the block checkout, and with High-Performance Order Storage.
 * Your branding on the payment page when WuloPay enables it for your account.
+* Works with WooCommerce Subscriptions: the card is stored with WuloPay at sign-up and every renewal is charged
+  automatically, including free trials and sign-up fees.
 
 You need a WuloPay merchant account. Payments are in South African rand (ZAR).
 
@@ -44,10 +46,22 @@ No. The shopper types them on WuloPay's payment page, inside the card processor'
 When the shopper returns, the plugin asks WuloPay whether the order was paid and completes it. Webhooks also cover
 shoppers who close the browser before returning, so set them up before going live.
 
+= Does it work with WooCommerce Subscriptions? =
+Yes (WooCommerce Subscriptions 7.0 or newer). At sign-up the shopper agrees to the subscription's terms on WuloPay's
+page and the card is stored with WuloPay. WooCommerce Subscriptions keeps the schedule, and each renewal is charged
+through WuloPay; a declined renewal follows your WooCommerce Subscriptions retry rules. Customers change their card
+from My Account. Supported: cancellation, suspension, reactivation, date changes and payment method changes. Not
+supported: changing a subscription's amount (charges are capped at what the shopper agreed to) and several
+subscriptions in one order. Refund renewal payments in the WuloPay merchant portal.
+
 = How do I go live? =
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.1.0 =
+* WooCommerce Subscriptions support: sign-ups (with free trials and sign-up fees), automatic renewals, payment method
+  changes, cancellation, suspension, reactivation and date changes.
 
 = 1.0.0 =
 * First release: hosted checkout, signed webhooks, refunds, block checkout, HPOS.
