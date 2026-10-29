@@ -24,7 +24,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$this->method_title       = __( 'WuloPay', 'wulopay-woocommerce' );
 		$this->method_description = __( 'Card payments (Visa, Mastercard) on WuloPay\'s secure payment page, with 3-D Secure. Card details never touch your site.', 'wulopay-woocommerce' );
 		$this->has_fields         = false;
-		$this->supports           = array( 'products', 'refunds' );
+		$this->supports           = array_merge( array( 'products', 'refunds' ), WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array() );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -129,6 +129,9 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 			wc_add_notice( __( 'Card payments are not available right now. Please choose another payment method.', 'wulopay-woocommerce' ), 'error' );
 			return array( 'result' => 'failure' );
 		}
+		if ( WuloPay_Subscriptions::is_method_change( $order ) ) {
+			return WuloPay_Subscriptions::change_payment_method( $order );
+		}
 
 		$name   = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$params = array(
@@ -163,7 +166,16 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		}
 
 		try {
+			if ( WuloPay_Subscriptions::is_signup( $order ) ) {
+				if ( ! WuloPay_Subscriptions::library_ok( $client ) ) {
+					throw new RuntimeException( __( 'Card payments for subscriptions are not available right now.', 'wulopay-woocommerce' ) );
+				}
+				$params = WuloPay_Subscriptions::signup_params( $order, $params, $client );
+			}
 			$session = $client->checkoutSessions->create( $params, 'wc-' . $order->get_id() . '-' . wp_generate_uuid4() ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- library API.
+		} catch ( RuntimeException $e ) {
+			wc_add_notice( $e->getMessage(), 'error' );
+			return array( 'result' => 'failure' );
 		} catch ( \WuloPay\Exception\WuloPayException $e ) {
 			self::log( 'Creating the checkout session for order ' . $order->get_id() . ' failed: ' . $e->getMessage(), 'error' );
 			wc_add_notice( __( 'We could not start the card payment. Please try again.', 'wulopay-woocommerce' ), 'error' );
@@ -193,6 +205,9 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$order      = wc_get_order( $order_id );
 		$session_id = $order ? (string) $order->get_meta( self::META_SESSION_ID ) : '';
 		$client     = self::client( $order ? (string) $order->get_meta( self::META_ENV ) : null );
+		if ( $order && '' === $session_id && function_exists( 'wcs_order_contains_renewal' ) && wcs_order_contains_renewal( $order ) ) {
+			return new WP_Error( 'wulopay_refund', __( 'Refund subscription renewal payments in the WuloPay merchant portal (Transactions).', 'wulopay-woocommerce' ) );
+		}
 		if ( '' === $session_id || null === $client ) {
 			return new WP_Error( 'wulopay_refund', __( 'This order has no WuloPay payment to refund.', 'wulopay-woocommerce' ) );
 		}
@@ -225,7 +240,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$order    = $order_id ? wc_get_order( $order_id ) : null;
 		$key      = sanitize_text_field( wp_unslash( $_GET['key'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$session  = sanitize_text_field( wp_unslash( $_GET['session_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! $order || ! hash_equals( $order->get_order_key(), $key ) || self::ID !== $order->get_payment_method() || ! $order->needs_payment() ) {
+		if ( ! $order || ! hash_equals( $order->get_order_key(), $key ) || self::ID !== $order->get_payment_method() || ( ! $order->needs_payment() && ! WuloPay_Subscriptions::awaiting_card( $order ) ) ) {
 			return;
 		}
 		if ( ! hash_equals( (string) $order->get_meta( self::META_SESSION_ID ), $session ) ) {
@@ -251,12 +266,20 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 	 * @param string   $source  'webhook' or 'return', for the order note.
 	 */
 	public static function apply_session( WC_Order $order, array $session, string $source ): void {
-		if ( ( $session['status'] ?? '' ) !== 'paid' || ! $order->needs_payment() ) {
+		if ( ( $session['status'] ?? '' ) !== 'paid' ) {
 			return;
 		}
 		$expected_session = (string) $order->get_meta( self::META_SESSION_ID );
-		$amount_ok        = abs( (float) ( $session['amount'] ?? -1 ) - (float) $order->get_total() ) < 0.005;
-		$currency_ok      = strtoupper( (string) ( $session['currency'] ?? '' ) ) === strtoupper( $order->get_currency() );
+		if ( '' !== $expected_session && hash_equals( $expected_session, (string) ( $session['id'] ?? '' ) ) ) {
+			// Subscription sign-up or payment method change: remember the WuloPay subscription for renewals.
+			WuloPay_Subscriptions::remember( $order, $session );
+			$order->save();
+		}
+		if ( ! $order->needs_payment() && ! WuloPay_Subscriptions::awaiting_card( $order ) ) {
+			return;
+		}
+		$amount_ok   = abs( (float) ( $session['amount'] ?? -1 ) - (float) $order->get_total() ) < 0.005;
+		$currency_ok = strtoupper( (string) ( $session['currency'] ?? '' ) ) === strtoupper( $order->get_currency() );
 		if ( '' === $expected_session || ! hash_equals( $expected_session, (string) ( $session['id'] ?? '' ) ) || ! $amount_ok || ! $currency_ok ) {
 			self::log( 'Order ' . $order->get_id() . ': paid session ' . ( $session['id'] ?? '?' ) . ' does not match the order; not marked paid.', 'error' );
 			$order->add_order_note( __( 'WuloPay reported a payment that does not match this order (session, amount or currency). The order was not marked paid; please check it in the WuloPay merchant portal.', 'wulopay-woocommerce' ) );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+- WooCommerce Subscriptions support: sign-ups with the shopper's agreement to the terms (free trials and sign-up fees
+  included), renewals charged through WuloPay with idempotency keys, payment method changes (card-update page),
+  cancellation, suspension, reactivation and date changes. Requires WooCommerce Subscriptions 7.0+ when used.
+- Bundles wulopay-php 1.1.0.
+
 ## 1.0.0
 - WuloPay hosted checkout for WooCommerce (classic and block checkout, HPOS).
 - Orders confirmed by signed webhooks and by a server-side check when the shopper returns.

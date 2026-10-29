@@ -33,11 +33,16 @@ final class WuloPay_Blocks extends AbstractPaymentMethodType {
 		return array( 'wulopay-blocks' );
 	}
 
+	/** Features the block checkout matches against the cart's needs (WooCommerce Subscriptions adds its own). */
+	public function get_supported_features() {
+		return array_merge( array( 'products', 'refunds' ), WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array() );
+	}
+
 	public function get_payment_method_data() {
 		return array(
 			'title'       => $this->get_setting( 'title' ),
 			'description' => $this->get_setting( 'description' ),
-			'supports'    => array( 'products', 'refunds' ),
+			'supports'    => $this->get_supported_features(),
 		);
 	}
 }
