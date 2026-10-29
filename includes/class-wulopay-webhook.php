@@ -50,6 +50,11 @@ final class WuloPay_Webhook {
 			return new WP_REST_Response( array( 'received' => true ), 200 );
 		}
 
+		if ( 0 === strpos( $type, 'subscription.' ) ) {
+			WuloPay_Subscriptions::webhook( $type, (string) $event['id'], is_array( $data_object ) ? $data_object : array() );
+			return new WP_REST_Response( array( 'received' => true ), 200 );
+		}
+
 		$order = self::find_order( is_array( $data_object ) ? $data_object : array() );
 		if ( ! $order ) {
 			// Not one of this store's orders (e.g. a session from another integration on the same merchant): acknowledge.

@@ -18,9 +18,13 @@ final class CheckoutSessions
     /**
      * Creates a session; send the shopper to the returned 'url'.
      *
-     * @param array{amount:float|int|string, currency:string, reference:string, returnUrl:string, cancelUrl?:string,
+     * @param array{amount?:float|int|string, currency?:string, reference:string, returnUrl:string, cancelUrl?:string,
      *              description?:string, customer?:array{email?:string,name?:string}, metadata?:array<string,string>,
-     *              expiresInMinutes?:int} $params
+     *              expiresInMinutes?:int, mode?:string,
+     *              subscription?:array{planId:string, billingMode?:string, maxAmount?:float, firstAmount?:float}} $params
+     *        mode "subscription" makes a sign-up session for a plan (amount and currency then come from the plan;
+     *        customer email is required). In merchant billing, subscription.firstAmount is what the shopper pays today
+     *        when it differs from the plan amount (0 = check and store the card only).
      * @param string|null $idempotencyKey Reuse the same key when retrying the same order, so only one session is made.
      * @return array<string,mixed>
      */

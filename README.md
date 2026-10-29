@@ -22,6 +22,18 @@ WordPress admin, Plugins, Add New, Upload. Setup steps are in [readme.txt](readm
 | Confirmation | `POST /wp-json/wulopay/v1/webhook` with `checkout.session.completed` (signature checked, event id de-duplicated), or on return the plugin calls `GET /Checkout/Sessions/{id}`. The order is completed only if the session id, amount and currency match the order. |
 | Refund | The order screen's refund button calls `POST /Checkout/Sessions/{id}/Refunds`. |
 
+**WooCommerce Subscriptions** (`includes/class-wulopay-subscriptions.php`, active only when the extension is):
+
+| Step | What happens |
+|---|---|
+| Sign-up | The subscription's recurring terms become a WuloPay plan (created once per set of terms). The session uses `mode: "subscription"`, merchant billing, `maxAmount` = the recurring total and `firstAmount` = the order total (0 for a free trial: the card is only checked and stored). The shopper agrees to the terms on WuloPay's page. |
+| Confirmation | Same as a payment; the WuloPay subscription id is stored on the WooCommerce subscription. A free-trial order (total 0) is completed when the card is stored. |
+| Renewal | `woocommerce_scheduled_subscription_payment_wulopay` calls `POST /Billing/Subscriptions/{id}/Charges` with idempotency key `wc-renewal-<order>-<attempt>`: paid → `payment_complete`; declined → order *failed* (WooCommerce Subscriptions' retry rules apply; the next attempt uses a new key). A network error keeps the key, so a retry can't charge twice. |
+| Change card | My Account → Change payment method opens a WuloPay card-update page (`CardUpdateSession`); switching from another method stores a card with a zero-amount sign-up. |
+| Cancel / expire | Cancels the WuloPay subscription, so the stored card can't be charged again. |
+
+Not declared to WooCommerce Subscriptions: amount changes and multiple subscriptions per order.
+
 Built on [wulopay-php](https://github.com/WuloPay/wulopay-php), bundled in `lib/`.
 
 ## Develop
