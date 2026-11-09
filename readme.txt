@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,10 +54,26 @@ from My Account. Supported: cancellation, suspension, reactivation, date changes
 supported: changing a subscription's amount (charges are capped at what the shopper agreed to) and several
 subscriptions in one order. Refund renewal payments in the WuloPay merchant portal.
 
+= WuloPay doesn't show at checkout =
+WuloPay is offered only when all of these hold: the method is enabled, the store currency is South African rand (ZAR),
+and the API key id and secret for the selected environment (Sandbox or Live, plus the API URL for Live) are filled in.
+The WuloPay settings page lists whatever is missing, and WooCommerce, Settings, Payments shows "Action needed" until
+the key is entered.
+
+= Can I change the logo at checkout? =
+Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another URL, or an empty string for no logo.
+
 = How do I go live? =
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.2.0 =
+* The WuloPay logo in the WooCommerce Payments list and next to the payment method at checkout (classic and block).
+  Developers can change or remove the checkout logo with the wulopay_wc_checkout_logo filter.
+* Clearer setup: until an API key is entered for the selected environment, WooCommerce shows "Action needed" and asks
+  you to finish setting up WuloPay before enabling it. The settings page says what keeps WuloPay off the checkout
+  (switched off, store currency not ZAR, or a missing key).
 
 = 1.1.0 =
 * WooCommerce Subscriptions support: sign-ups (with free trials and sign-up fees), automatic renewals, payment method

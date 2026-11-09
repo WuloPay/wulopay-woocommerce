@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0
+- WuloPay logo in the WooCommerce Payments settings list (square mark) and next to the payment method at the classic
+  and block checkout (full logo). Filter `wulopay_wc_checkout_logo` changes the checkout logo URL, or removes it
+  when it returns ''.
+- `needs_setup()`: while the selected environment has no usable API key, WooCommerce shows "Action needed" and won't
+  enable the method ("Finish setting up WuloPay before enabling it"), instead of enabling a method that never
+  appears at checkout.
+- The settings page lists what keeps WuloPay off the checkout: switched off, store currency not ZAR, missing key id,
+  secret or live API URL.
+
 ## 1.1.0
 - WooCommerce Subscriptions support: sign-ups with the shopper's agreement to the terms (free trials and sign-up fees
   included), renewals charged through WuloPay with idempotency keys, payment method changes (card-update page),

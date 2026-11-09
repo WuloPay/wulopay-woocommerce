@@ -43,6 +43,7 @@ final class WuloPay_Blocks extends AbstractPaymentMethodType {
 			'title'       => $this->get_setting( 'title' ),
 			'description' => $this->get_setting( 'description' ),
 			'supports'    => $this->get_supported_features(),
+			'logo'        => (string) apply_filters( 'wulopay_wc_checkout_logo', WuloPay_Gateway::logo_url() ),
 		);
 	}
 }

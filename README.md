@@ -34,6 +34,12 @@ WordPress admin, Plugins, Add New, Upload. Setup steps are in [readme.txt](readm
 
 Not declared to WooCommerce Subscriptions: amount changes and multiple subscriptions per order.
 
+**Branding and setup checks**: the gateway's `icon` is the square WuloPay mark (WooCommerce Payments list);
+`get_icon()` and the block label show the full logo at checkout (`wulopay_wc_checkout_logo` filter, '' for none).
+`is_available()` needs: enabled, store currency ZAR, and a key for the selected environment. `needs_setup()` is true
+without a key, so WooCommerce shows "Action needed" and won't enable the method; `checkout_blockers()` lists the
+reasons on the settings page.
+
 Built on [wulopay-php](https://github.com/WuloPay/wulopay-php), bundled in `lib/`.
 
 ## Develop
