@@ -3,7 +3,7 @@
  * Plugin Name:       WuloPay for WooCommerce
  * Plugin URI:        https://github.com/WuloPay/wulopay-woocommerce
  * Description:       Accept Visa and Mastercard payments with WuloPay. Shoppers pay on WuloPay's secure payment page (3-D Secure included) and orders are confirmed by signed webhooks.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.6
  * Requires PHP:      8.3
  * Requires Plugins:  woocommerce
@@ -20,7 +20,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WULOPAY_WC_VERSION', '1.1.0' );
+define( 'WULOPAY_WC_VERSION', '1.2.0' );
 define( 'WULOPAY_WC_FILE', __FILE__ );
 define( 'WULOPAY_WC_DIR', plugin_dir_path( __FILE__ ) );
 

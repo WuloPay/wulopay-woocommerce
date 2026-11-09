@@ -24,6 +24,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$this->method_title       = __( 'WuloPay', 'wulopay-woocommerce' );
 		$this->method_description = __( 'Card payments (Visa, Mastercard) on WuloPay\'s secure payment page, with 3-D Secure. Card details never touch your site.', 'wulopay-woocommerce' );
 		$this->has_fields         = false;
+		$this->icon               = plugins_url( 'assets/images/wulopay-mark.svg', WULOPAY_WC_FILE );
 		$this->supports           = array_merge( array( 'products', 'refunds' ), WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array() );
 
 		$this->init_form_fields();
@@ -114,12 +115,62 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		return null !== self::client();
 	}
 
-	/** Settings screen: point out what is missing. */
+	/**
+	 * The full WuloPay logo next to the payment method at the classic checkout ($this->icon, the square mark, is what
+	 * the WooCommerce Payments settings list shows). Themes size it with their own CSS; the width and height
+	 * attributes only apply when they don't. Return '' from the wulopay_wc_checkout_logo filter to show no logo.
+	 */
+	public function get_icon() {
+		$url  = (string) apply_filters( 'wulopay_wc_checkout_logo', self::logo_url() );
+		$html = '' === $url ? '' : sprintf(
+			'<img src="%1$s" alt="%2$s" width="109" height="36" class="wulopay-logo" />',
+			esc_url( WC_HTTPS::force_https_url( $url ) ),
+			esc_attr__( 'WuloPay', 'wulopay-woocommerce' )
+		);
+		return apply_filters( 'woocommerce_gateway_icon', $html, $this->id );
+	}
+
+	/** The full WuloPay logo (cards and wordmark). */
+	public static function logo_url(): string {
+		return plugins_url( 'assets/images/wulopay-logo.svg', WULOPAY_WC_FILE );
+	}
+
+	/**
+	 * True while the selected environment has no usable API key. The WooCommerce Payments list then shows "Action
+	 * needed" and refuses to enable the method ("Finish setting up WuloPay before enabling it") instead of enabling a
+	 * method that could not appear at checkout.
+	 */
+	public function needs_setup() {
+		return null === self::client();
+	}
+
+	/** Settings screen: point out what keeps WuloPay off the checkout. */
 	public function admin_options() {
-		if ( 'ZAR' !== get_woocommerce_currency() ) {
-			echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'WuloPay takes payments in South African rand (ZAR). Set the store currency to ZAR to offer it at checkout.', 'wulopay-woocommerce' ) . '</p></div>';
+		foreach ( $this->checkout_blockers() as $blocker ) {
+			echo '<div class="notice notice-warning inline"><p>' . esc_html( $blocker ) . '</p></div>';
 		}
 		parent::admin_options();
+	}
+
+	/**
+	 * Why shoppers would not see WuloPay at checkout, in plain words (empty when nothing is missing).
+	 *
+	 * @return string[]
+	 */
+	public function checkout_blockers(): array {
+		$blockers = array();
+		if ( 'yes' !== $this->get_option( 'enabled', 'no' ) ) {
+			$blockers[] = __( 'WuloPay is switched off, so shoppers don\'t see it at checkout. Tick "Enable" below and save.', 'wulopay-woocommerce' );
+		}
+		if ( 'ZAR' !== get_woocommerce_currency() ) {
+			$blockers[] = __( 'WuloPay takes payments in South African rand (ZAR). Set the store currency to ZAR to offer it at checkout.', 'wulopay-woocommerce' );
+		}
+		if ( null === self::client() ) {
+			$blockers[] = 'live' === self::environment()
+				? __( 'WuloPay is set to Live but the live API key id, secret or API URL is missing, so it is not shown at checkout.', 'wulopay-woocommerce' )
+				: __( 'WuloPay is set to Sandbox but the sandbox API key id or secret is missing, so it is not shown at checkout.', 'wulopay-woocommerce' );
+		}
+		return $blockers;
 	}
 
 	public function process_payment( $order_id ) {

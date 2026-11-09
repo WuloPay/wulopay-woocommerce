@@ -8,10 +8,20 @@
 	const settings = getSetting( 'wulopay_data', {} );
 	const title = decodeEntities( settings.title || 'Card (Visa, Mastercard)' );
 	const Content = () => createElement( 'p', null, decodeEntities( settings.description || '' ) );
+	// Title on the left, WuloPay logo on the right (no logo when the wulopay_wc_checkout_logo filter returns '').
+	const Label = () =>
+		createElement(
+			'span',
+			{ style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%' } },
+			createElement( 'span', null, title ),
+			settings.logo
+				? createElement( 'img', { src: settings.logo, alt: 'WuloPay', className: 'wulopay-logo' } )
+				: null
+		);
 
 	registerPaymentMethod( {
 		name: 'wulopay',
-		label: createElement( 'span', null, title ),
+		label: createElement( Label ),
 		ariaLabel: title,
 		content: createElement( Content ),
 		edit: createElement( Content ),
