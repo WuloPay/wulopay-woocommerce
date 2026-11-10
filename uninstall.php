@@ -8,5 +8,8 @@
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 delete_option( 'woocommerce_wulopay_settings' );
+if ( function_exists( 'as_unschedule_all_actions' ) ) {
+	as_unschedule_all_actions( 'wulopay_wc_check_session', array(), 'wulopay' );
+}
 global $wpdb;
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_wulopay\\_token\\_%' OR option_name LIKE '\\_transient\\_timeout\\_wulopay\\_token\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery

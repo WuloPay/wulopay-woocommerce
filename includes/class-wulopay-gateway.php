@@ -18,6 +18,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 	public const META_SESSION_ID = '_wulopay_session_id';
 	public const META_ENV        = '_wulopay_environment';
 	public const META_EVENTS     = '_wulopay_events';
+	public const META_PREVIOUS   = '_wulopay_previous_sessions';
 
 	public function __construct() {
 		$this->id                 = self::ID;
@@ -38,23 +39,23 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$webhook_url       = rest_url( WuloPay_Webhook::NAMESPACE . WuloPay_Webhook::ROUTE );
 		$this->form_fields = array(
-			'enabled'        => array(
+			'enabled'                => array(
 				'title'   => __( 'Enable', 'wulopay-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Accept card payments with WuloPay', 'wulopay-woocommerce' ),
 				'default' => 'no',
 			),
-			'title'          => array(
+			'title'                  => array(
 				'title'   => __( 'Title', 'wulopay-woocommerce' ),
 				'type'    => 'text',
 				'default' => __( 'Card (Visa, Mastercard)', 'wulopay-woocommerce' ),
 			),
-			'description'    => array(
+			'description'            => array(
 				'title'   => __( 'Description', 'wulopay-woocommerce' ),
 				'type'    => 'textarea',
 				'default' => __( 'You will pay securely on WuloPay\'s payment page.', 'wulopay-woocommerce' ),
 			),
-			'environment'    => array(
+			'environment'            => array(
 				'title'   => __( 'Environment', 'wulopay-woocommerce' ),
 				'type'    => 'select',
 				'options' => array(
@@ -63,33 +64,33 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 				),
 				'default' => 'sandbox',
 			),
-			'sandbox_key_id' => array(
+			'sandbox_key_id'         => array(
 				'title'       => __( 'Sandbox API key id', 'wulopay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'From the WuloPay merchant portal: Product Configuration, Hosted Checkout, Enable.', 'wulopay-woocommerce' ),
 				'placeholder' => 'wk_…',
 			),
-			'sandbox_secret' => array(
+			'sandbox_secret'         => array(
 				'title' => __( 'Sandbox API secret', 'wulopay-woocommerce' ),
 				'type'  => 'password',
 			),
-			'live_key_id'    => array(
+			'live_key_id'            => array(
 				'title'       => __( 'Live API key id', 'wulopay-woocommerce' ),
 				'type'        => 'text',
 				'placeholder' => 'wk_…',
 			),
-			'live_secret'    => array(
+			'live_secret'            => array(
 				'title' => __( 'Live API secret', 'wulopay-woocommerce' ),
 				'type'  => 'password',
 			),
-			'live_base_url'  => array(
+			'live_base_url'          => array(
 				'title'       => __( 'Live API URL', 'wulopay-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'WuloPay gives you this address when your account goes live.', 'wulopay-woocommerce' ),
 				'placeholder' => 'https://…/api/v1',
 			),
-			'webhook_secret' => array(
-				'title'       => __( 'Webhook signing secret', 'wulopay-woocommerce' ),
+			'sandbox_webhook_secret' => array(
+				'title'       => __( 'Sandbox webhook signing secret', 'wulopay-woocommerce' ),
 				'type'        => 'password',
 				'description' => sprintf(
 					/* translators: %s: webhook URL */
@@ -98,7 +99,25 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 				),
 				'placeholder' => 'whsec_…',
 			),
-			'debug'          => array(
+			'live_webhook_secret'    => array(
+				'title'       => __( 'Live webhook signing secret', 'wulopay-woocommerce' ),
+				'type'        => 'password',
+				'description' => __( 'The same endpoint, added in your live merchant portal. Each environment has its own signing secret, so you can switch between them without changing it.', 'wulopay-woocommerce' ),
+				'placeholder' => 'whsec_…',
+			),
+		);
+		// Before 1.3.0 one signing secret served both environments. It keeps working, without an environment check,
+		// until the merchant clears it.
+		$saved = get_option( $this->get_option_key(), array() );
+		if ( '' !== trim( (string) ( $saved['webhook_secret'] ?? '' ) ) ) {
+			$this->form_fields['webhook_secret'] = array(
+				'title'       => __( 'Webhook signing secret (earlier version)', 'wulopay-woocommerce' ),
+				'type'        => 'password',
+				'description' => __( 'Accepted for both environments. Enter it above as the sandbox or live secret, then clear this field.', 'wulopay-woocommerce' ),
+			);
+		}
+		$this->form_fields += array(
+			'debug' => array(
 				'title'   => __( 'Debug log', 'wulopay-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Log WuloPay requests (WooCommerce, Status, Logs). Secrets are never logged.', 'wulopay-woocommerce' ),
@@ -183,6 +202,10 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		if ( WuloPay_Subscriptions::is_method_change( $order ) ) {
 			return WuloPay_Subscriptions::change_payment_method( $order );
 		}
+		$previous = $this->settle_previous_session( $order );
+		if ( null !== $previous ) {
+			return $previous;
+		}
 
 		$name   = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$params = array(
@@ -245,11 +268,79 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$order->update_status( 'pending' );
 		$order->save();
 		self::log( 'Order ' . $order->get_id() . ': checkout session ' . $session['id'] . ' created.' );
+		WuloPay_Status_Check::schedule( $order->get_id() );
 
 		return array(
 			'result'   => 'success',
 			'redirect' => $session['url'],
 		);
+	}
+
+	/**
+	 * One payable session per order. When the shopper places the order again (back button, second tab, changed
+	 * cart), the earlier session is looked up first: paid → the order is completed and the shopper goes to the
+	 * receipt; in progress (3-D Secure in another window) → the shopper is asked to finish it; open → it is cancelled
+	 * so it can no longer be paid, and a new one is created. Without this, two sessions could both be paid.
+	 *
+	 * @param WC_Order $order The order being paid.
+	 * @return array|null A process_payment() result to return now, or null to create a new session.
+	 */
+	private function settle_previous_session( WC_Order $order ): ?array {
+		$session_id = (string) $order->get_meta( self::META_SESSION_ID );
+		$client     = '' !== $session_id ? self::client( (string) $order->get_meta( self::META_ENV ) ) : null;
+		if ( null === $client ) {
+			return null;
+		}
+		$failure = static function ( string $message ): array {
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure' );
+		};
+		$busy    = __( 'A card payment for this order is already in progress in another window. Please finish it there, or try again in a few minutes.', 'wulopay-woocommerce' );
+		try {
+			$session = $client->checkoutSessions->retrieve( $session_id ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- library API.
+			if ( 'open' === ( $session['status'] ?? '' ) ) {
+				try {
+					$session = $client->checkoutSessions->cancel( $session_id ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- library API.
+				} catch ( \WuloPay\Exception\ConflictException $e ) {
+					// The shopper started paying it in the meantime.
+					$session = $client->checkoutSessions->retrieve( $session_id ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- library API.
+				}
+			}
+		} catch ( \WuloPay\Exception\WuloPayException $e ) {
+			self::log( 'Order ' . $order->get_id() . ': could not check the earlier session ' . $session_id . ': ' . $e->getMessage(), 'error' );
+			return $failure( __( 'We could not check the earlier card payment for this order. Please try again in a moment.', 'wulopay-woocommerce' ) );
+		}
+
+		switch ( $session['status'] ?? '' ) {
+			case 'paid':
+				self::apply_session( $order, $session, 'checkout retry' );
+				$order = wc_get_order( $order->get_id() );
+				if ( ! $order->needs_payment() && ! WuloPay_Subscriptions::awaiting_card( $order ) ) {
+					return array(
+						'result'   => 'success',
+						'redirect' => $this->get_return_url( $order ),
+					);
+				}
+				return $failure( __( 'This order was already paid with a different amount. Please contact the store.', 'wulopay-woocommerce' ) );
+			case 'processing':
+			case 'open':
+				return $failure( $busy );
+			case 'cancelled':
+				$order->add_order_note(
+					sprintf(
+						/* translators: %s: WuloPay checkout session id */
+						__( 'The earlier WuloPay checkout (session %s) was cancelled so that it can no longer be paid; a new one is being started.', 'wulopay-woocommerce' ),
+						$session_id
+					)
+				);
+				break;
+		}
+		$previous   = (array) $order->get_meta( self::META_PREVIOUS );
+		$previous[] = $session_id;
+		$order->update_meta_data( self::META_PREVIOUS, array_slice( array_values( array_unique( $previous ) ), -10 ) );
+		$order->delete_meta_data( self::META_SESSION_ID );
+		$order->save();
+		return null;
 	}
 
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
