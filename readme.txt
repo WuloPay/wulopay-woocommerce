@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,9 @@ WuloPay's secure payment page, pays (3-D Secure is handled there), and comes bac
 * Works with WooCommerce Subscriptions: the card is stored with WuloPay at sign-up and every renewal is charged
   automatically, including free trials and sign-up fees.
 
-You need a WuloPay merchant account. Payments are in South African rand (ZAR).
+You need a WuloPay merchant account. Payments are in South African rand (ZAR), Namibian dollar (NAD), Botswana pula
+(BWP), Lesotho loti (LSL) or eSwatini lilangeni (SZL), the store's currency. The sandbox accepts all five; in live,
+currencies other than ZAR are enabled for your account on request.
 
 Keep PHP up to date: use PHP 8.4 or 8.5 on its latest patch release. The plugin warns you in the admin if your
 PHP release has known critical security flaws.
@@ -61,7 +63,7 @@ supported: changing a subscription's amount (charges are capped at what the shop
 subscriptions in one order. Refund renewal payments in the WuloPay merchant portal.
 
 = WuloPay doesn't show at checkout =
-WuloPay is offered only when all of these hold: the method is enabled, the store currency is South African rand (ZAR),
+WuloPay is offered only when all of these hold: the method is enabled, the store currency is ZAR, NAD, BWP, LSL or SZL,
 and the API key id and secret for the selected environment (Sandbox or Live, plus the API URL for Live) are filled in.
 The WuloPay settings page lists whatever is missing, and WooCommerce, Settings, Payments shows "Action needed" until
 the key is entered.
@@ -73,6 +75,11 @@ Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another 
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.4.0 =
+* Namibian dollar (NAD), Botswana pula (BWP), Lesotho loti (LSL) and eSwatini lilangeni (SZL) as well as rand: WuloPay
+  is offered when the store uses one of them. The sandbox accepts all five; in live, currencies other than ZAR are
+  enabled for your account on request (the settings page reminds you).
 
 = 1.3.0 =
 * One payment link per order: when a shopper places the same order again (back button, a second tab, a changed
@@ -96,7 +103,7 @@ WuloPay gives you live API keys and the live API address. Enter them, choose Liv
   Developers can change or remove the checkout logo with the wulopay_wc_checkout_logo filter.
 * Clearer setup: until an API key is entered for the selected environment, WooCommerce shows "Action needed" and asks
   you to finish setting up WuloPay before enabling it. The settings page says what keeps WuloPay off the checkout
-  (switched off, store currency not ZAR, or a missing key).
+  (switched off, store currency not supported, or a missing key).
 
 = 1.1.0 =
 * WooCommerce Subscriptions support: sign-ups (with free trials and sign-up fees), automatic renewals, payment method

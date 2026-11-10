@@ -6,7 +6,7 @@ again with WuloPay when the shopper comes back. Card details never touch the sto
 
 Requires PHP 8.3+, WordPress 6.6+ and WooCommerce 9.0+ (tested with WordPress 7.1, WooCommerce 11.2, PHP 8.4.27).
 Use PHP 8.4 or 8.5 on its latest patch release; the plugin warns store managers when PHP lacks critical security fixes.
-Payments are in ZAR.
+Payments are in the store's currency: ZAR, NAD, BWP, LSL or SZL (sandbox: all five; live: other than ZAR on request).
 
 ## Install
 
@@ -37,7 +37,7 @@ Not declared to WooCommerce Subscriptions: amount changes and multiple subscript
 
 **Branding and setup checks**: the gateway's `icon` is the square WuloPay mark (WooCommerce Payments list);
 `get_icon()` and the block label show the full logo at checkout (`wulopay_wc_checkout_logo` filter, '' for none).
-`is_available()` needs: enabled, store currency ZAR, and a key for the selected environment. `needs_setup()` is true
+`is_available()` needs: enabled, a store currency in `WuloPay_Gateway::CURRENCIES` (filter `wulopay_wc_currencies`), and a key for the selected environment. `needs_setup()` is true
 without a key, so WooCommerce shows "Action needed" and won't enable the method; `checkout_blockers()` lists the
 reasons on the settings page.
 

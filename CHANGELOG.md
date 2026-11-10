@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0
+- Store currencies NAD, BWP, LSL and SZL besides ZAR (`WuloPay_Gateway::CURRENCIES`, filter `wulopay_wc_currencies`).
+  Sessions, plans and refunds already carry the order's currency. The settings page warns when a live store uses a
+  currency other than ZAR, which WuloPay enables per merchant.
+
 ## 1.3.0
 - One payable session per order (`settle_previous_session()`): on a repeated `process_payment()` the stored session
   is retrieved first. Paid → order completed, redirect to the receipt; processing (payment or 3-D Secure under way) →

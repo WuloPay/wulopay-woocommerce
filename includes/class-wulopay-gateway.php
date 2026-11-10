@@ -20,6 +20,13 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 	public const META_EVENTS     = '_wulopay_events';
 	public const META_PREVIOUS   = '_wulopay_previous_sessions';
 
+	/**
+	 * Store currencies WuloPay can take: South African rand, Namibian dollar, Botswana pula, Lesotho loti and eSwatini
+	 * lilangeni. The sandbox accepts all of them; in live, currencies other than ZAR are enabled per merchant by WuloPay
+	 * (the API refuses one that isn't). Filter: wulopay_wc_currencies.
+	 */
+	public const CURRENCIES = array( 'ZAR', 'NAD', 'BWP', 'LSL', 'SZL' );
+
 	public function __construct() {
 		$this->id                 = self::ID;
 		$this->method_title       = __( 'WuloPay', 'wulopay-woocommerce' );
@@ -126,9 +133,9 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		);
 	}
 
-	/** Only for ZAR stores with credentials configured. */
+	/** Only for stores in a supported currency, with credentials configured. */
 	public function is_available() {
-		if ( ! parent::is_available() || 'ZAR' !== get_woocommerce_currency() ) {
+		if ( ! parent::is_available() || ! self::currency_supported() ) {
 			return false;
 		}
 		return null !== self::client();
@@ -181,8 +188,18 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->get_option( 'enabled', 'no' ) ) {
 			$blockers[] = __( 'WuloPay is switched off, so shoppers don\'t see it at checkout. Tick "Enable" below and save.', 'wulopay-woocommerce' );
 		}
-		if ( 'ZAR' !== get_woocommerce_currency() ) {
-			$blockers[] = __( 'WuloPay takes payments in South African rand (ZAR). Set the store currency to ZAR to offer it at checkout.', 'wulopay-woocommerce' );
+		if ( ! self::currency_supported() ) {
+			$blockers[] = sprintf(
+				/* translators: %s: the store's currency code */
+				__( 'WuloPay takes payments in South African rand (ZAR), Namibian dollar (NAD), Botswana pula (BWP), Lesotho loti (LSL) and eSwatini lilangeni (SZL), but this store uses %s. Change the store currency to offer WuloPay at checkout.', 'wulopay-woocommerce' ),
+				get_woocommerce_currency()
+			);
+		} elseif ( 'ZAR' !== get_woocommerce_currency() && 'live' === self::environment() ) {
+			$blockers[] = sprintf(
+				/* translators: %s: the store's currency code */
+				__( 'Live payments in %s must be enabled for your WuloPay account. Ask WuloPay before going live; until then live checkouts in this currency are refused.', 'wulopay-woocommerce' ),
+				get_woocommerce_currency()
+			);
 		}
 		if ( null === self::client() ) {
 			$blockers[] = 'live' === self::environment()
@@ -440,6 +457,12 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 			)
 		);
 		self::log( 'Order ' . $order->get_id() . ' paid (session ' . $session['id'] . ', ' . $source . ').' );
+	}
+
+	/** Whether the store currency is one WuloPay takes. */
+	public static function currency_supported(): bool {
+		$currencies = array_map( 'strtoupper', (array) apply_filters( 'wulopay_wc_currencies', self::CURRENCIES ) );
+		return in_array( strtoupper( get_woocommerce_currency() ), $currencies, true );
 	}
 
 	/** The configured environment: "sandbox" or "live". */
