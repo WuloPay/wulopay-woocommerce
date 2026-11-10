@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,12 @@ Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another 
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.2.1 =
+* Fix: on some hosts payments failed with "Amount can have at most 2 decimals" (servers with PHP's
+  serialize_precision set to 17). Amounts are now always sent with two decimals.
+* Block checkout: WuloPay is listed in the checkout block editor whenever it is enabled, and offered to shoppers once
+  the store is set up.
 
 = 1.2.0 =
 * The WuloPay logo in the WooCommerce Payments list and next to the payment method at checkout (classic and block).

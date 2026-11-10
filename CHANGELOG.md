@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1
+- Fix: "Amount can have at most 2 decimals" on servers with `serialize_precision = 17`. Bundles wulopay-php 1.2.2,
+  which encodes request bodies with the shortest exact form of each number.
+- Block checkout: `is_active()` is true whenever the method is enabled (the checkout block editor lists it, and
+  gets the script through `get_payment_method_script_handles_for_admin()`); shoppers see it only when
+  `canMakePayment()` finds the store ready (same rules as `is_available()`).
+
 ## 1.2.0
 - WuloPay logo in the WooCommerce Payments settings list (square mark) and next to the payment method at the classic
   and block checkout (full logo). Filter `wulopay_wc_checkout_logo` changes the checkout logo URL, or removes it

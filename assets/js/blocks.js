@@ -25,7 +25,8 @@
 		ariaLabel: title,
 		content: createElement( Content ),
 		edit: createElement( Content ),
-		canMakePayment: () => true,
+		// Listed in the editor whenever enabled; offered to shoppers only when the store is set up (currency, API key).
+		canMakePayment: () => settings.ready !== false,
 		supports: { features: settings.supports || [ 'products' ] },
 	} );
 } )();
