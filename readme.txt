@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,11 @@ WuloPay for WooCommerce adds card payments (Visa, Mastercard) to your store. At 
 WuloPay's secure payment page, pays (3-D Secure is handled there), and comes back to your order confirmation.
 
 * Card details never touch your site, which keeps your PCI DSS scope at the simplest level (SAQ A).
-* Orders are confirmed by signed webhooks, and checked again with WuloPay when the shopper returns.
+* Orders are confirmed by signed webhooks, checked again with WuloPay when the shopper returns, and checked in the
+  background until the payment link expires, so a payment is never missed.
+* One payment link per order: if the shopper places the order again, the earlier link is cancelled first, so an
+  order can't be paid twice.
+* Full and partial refunds made in the WuloPay merchant portal are added to the WooCommerce order automatically.
 * Full and partial refunds from the WooCommerce order screen.
 * Works with the classic and the block checkout, and with High-Performance Order Storage.
 * Your branding on the payment page when WuloPay enables it for your account.
@@ -33,8 +37,9 @@ PHP release has known critical security flaws.
 1. Install and activate the plugin (WooCommerce must be active).
 2. In the WuloPay merchant portal, open Product Configuration, enable **Hosted Checkout** and copy the API key id and secret.
 3. In WooCommerce, Settings, Payments, WuloPay: paste the key and secret for the Sandbox (or Live) environment and enable the method.
-4. In the merchant portal, Product Configuration, Webhooks: add the endpoint shown under "Webhook signing secret"
-   (`https://your-store/wp-json/wulopay/v1/webhook`) and paste its signing secret into the plugin settings.
+4. In the merchant portal, Product Configuration, Webhooks: add the endpoint shown under "Sandbox webhook signing
+   secret" (`https://your-store/wp-json/wulopay/v1/webhook`) and paste its signing secret into that field. When you
+   go live, do the same in your live merchant portal and paste that secret into "Live webhook signing secret".
 5. Place a test order with a sandbox test card, for example 4000 0000 0000 2701, any future expiry and any security code.
 
 == Frequently Asked Questions ==
@@ -43,8 +48,9 @@ PHP release has known critical security flaws.
 No. The shopper types them on WuloPay's payment page, inside the card processor's secure fields.
 
 = What if my webhook isn't set up yet? =
-When the shopper returns, the plugin asks WuloPay whether the order was paid and completes it. Webhooks also cover
-shoppers who close the browser before returning, so set them up before going live.
+When the shopper returns, the plugin asks WuloPay whether the order was paid and completes it, and orders still
+waiting for payment are checked in the background every 15 minutes until the payment link expires. Webhooks confirm
+payments straight away, so set them up before going live.
 
 = Does it work with WooCommerce Subscriptions? =
 Yes (WooCommerce Subscriptions 7.0 or newer). At sign-up the shopper agrees to the subscription's terms on WuloPay's
@@ -67,6 +73,17 @@ Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another 
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.3.0 =
+* One payment link per order: when a shopper places the same order again (back button, a second tab, a changed
+  cart), the earlier WuloPay payment page is cancelled before a new one opens, so the order can't be paid twice. If
+  the earlier one was already paid, the shopper goes straight to the order confirmation; if a payment is in progress
+  in another window, the shopper is asked to finish it there.
+* Refunds made in the WuloPay merchant portal are added to the WooCommerce order automatically (stock is not changed).
+* Separate webhook signing secrets for sandbox and live. The single secret of earlier versions keeps working until
+  you replace it.
+* Background status check: orders still waiting for payment are checked with WuloPay every 15 minutes until the
+  payment link expires, in case a webhook was missed and the shopper didn't come back to the shop.
 
 = 1.2.1 =
 * Fix: on some hosts payments failed with "Amount can have at most 2 decimals" (servers with PHP's

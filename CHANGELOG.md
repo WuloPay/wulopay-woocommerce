@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0
+- One payable session per order (`settle_previous_session()`): on a repeated `process_payment()` the stored session
+  is retrieved first. Paid → order completed, redirect to the receipt; processing (payment or 3-D Secure under way) →
+  the shopper is asked to finish it; open → `POST /Checkout/Sessions/{id}/Cancel` (a 409 means the shopper just
+  started paying it: re-read), then a new session. Replaced session ids are kept in `_wulopay_previous_sessions`; a
+  payment reported on one of them adds a warning note instead of being ignored.
+- Merchant-portal refunds: `refund.succeeded` records the gap between WuloPay's `totalRefunded` and the order's
+  refunded total as a WooCommerce refund (`refund_payment` false, no restock). Refunds started in WooCommerce are
+  already counted, and repeats change nothing. Needs the WuloPay API to send `refund.succeeded` for portal refunds.
+- `sandbox_webhook_secret` and `live_webhook_secret`; a secret only accepts its environment's events. The earlier
+  single `webhook_secret` stays valid for both (shown in the settings until cleared).
+- `WuloPay_Status_Check`: Action Scheduler job 10 minutes after each new session, then every 15 minutes (at most 8
+  checks), until the order is paid or the session has expired or was cancelled. Unscheduled on uninstall.
+
 ## 1.2.1
 - Fix: "Amount can have at most 2 decimals" on servers with `serialize_precision = 17`. Bundles wulopay-php 1.2.2,
   which encodes request bodies with the shortest exact form of each number.

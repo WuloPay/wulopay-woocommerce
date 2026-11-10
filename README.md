@@ -19,8 +19,9 @@ WordPress admin, Plugins, Add New, Upload. Setup steps are in [readme.txt](readm
 |---|---|
 | Place order | `process_payment()` creates a WuloPay checkout session (amount, order number, return URL, the order id in metadata) and redirects to its URL. The order stays *pending*. |
 | Shopper pays | On WuloPay's page: card fields, 3-D Secure, receipt, then back to the order-received page with `session_id`. |
-| Confirmation | `POST /wp-json/wulopay/v1/webhook` with `checkout.session.completed` (signature checked, event id de-duplicated), or on return the plugin calls `GET /Checkout/Sessions/{id}`. The order is completed only if the session id, amount and currency match the order. |
-| Refund | The order screen's refund button calls `POST /Checkout/Sessions/{id}/Refunds`. |
+| Place again | If the order already has a session: paid → completed and sent to the receipt; in progress → the shopper is asked to finish it; open → cancelled (`POST /Checkout/Sessions/{id}/Cancel`) before a new one is created. One payable session per order. |
+| Confirmation | `POST /wp-json/wulopay/v1/webhook` with `checkout.session.completed` (signature checked against the sandbox or live secret, event id de-duplicated), or on return the plugin calls `GET /Checkout/Sessions/{id}`, or the background check (Action Scheduler, every 15 minutes until the session ends). The order is completed only if the session id, amount and currency match the order. |
+| Refund | The order screen's refund button calls `POST /Checkout/Sessions/{id}/Refunds`. A refund made in the merchant portal arrives as `refund.succeeded` and is added to the order (the gap between WuloPay's total refunded and the order's). |
 
 **WooCommerce Subscriptions** (`includes/class-wulopay-subscriptions.php`, active only when the extension is):
 
