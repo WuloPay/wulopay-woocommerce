@@ -62,6 +62,12 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 				'type'    => 'textarea',
 				'default' => __( 'You will pay securely on WuloPay\'s payment page.', 'wulopay-woocommerce' ),
 			),
+			'accept_marks'           => array(
+				'title'   => __( '"We accept" logos', 'wulopay-woocommerce' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Show the card logos shoppers can pay with under the payment method at checkout', 'wulopay-woocommerce' ),
+				'default' => 'yes',
+			),
 			'environment'            => array(
 				'title'   => __( 'Environment', 'wulopay-woocommerce' ),
 				'type'    => 'select',
@@ -159,6 +165,80 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 	/** The full WuloPay logo (cards and wordmark). */
 	public static function logo_url(): string {
 		return plugins_url( 'assets/images/wulopay-logo.svg', WULOPAY_WC_FILE );
+	}
+
+	/** Acceptance marks the plugin ships: brand => [label, image file in assets/images]. */
+	private const MARKS = array(
+		'visa'       => array( 'Visa', 'card-visa.svg' ),
+		'mastercard' => array( 'Mastercard', 'card-mastercard.svg' ),
+	);
+
+	/**
+	 * The "We accept" row under the payment method: label and image URL of each way the shopper can pay. Empty when
+	 * the "We accept" logos setting is off. Filter wulopay_wc_accept_marks receives and returns a list of
+	 * array( 'brand' => …, 'label' => …, 'src' => … ); return an empty array to show no row.
+	 *
+	 * @return array<int, array{brand: string, label: string, src: string}>
+	 */
+	public static function accept_marks(): array {
+		$settings = get_option( 'woocommerce_' . self::ID . '_settings', array() );
+		if ( 'no' === ( $settings['accept_marks'] ?? 'yes' ) ) {
+			return array();
+		}
+		$marks = array();
+		foreach ( self::MARKS as $brand => list( $label, $file ) ) {
+			$marks[] = array(
+				'brand' => $brand,
+				'label' => $label,
+				'src'   => plugins_url( 'assets/images/' . $file, WULOPAY_WC_FILE ),
+			);
+		}
+		$marks = apply_filters( 'wulopay_wc_accept_marks', $marks );
+		return is_array( $marks ) ? array_values( array_filter( $marks, array( self::class, 'valid_mark' ) ) ) : array();
+	}
+
+	/**
+	 * A filtered mark is used only when it has a label and an image URL.
+	 *
+	 * @param mixed $mark One entry from the wulopay_wc_accept_marks filter.
+	 */
+	private static function valid_mark( $mark ): bool {
+		return is_array( $mark ) && '' !== (string) ( $mark['label'] ?? '' ) && '' !== (string) ( $mark['src'] ?? '' );
+	}
+
+	/** The row as HTML for the classic checkout ('' when there are no marks). */
+	public static function accept_marks_html(): string {
+		$marks = self::accept_marks();
+		if ( empty( $marks ) ) {
+			return '';
+		}
+		$images = '';
+		foreach ( $marks as $mark ) {
+			$images .= sprintf(
+				'<img src="%1$s" alt="%2$s" title="%2$s" width="52" height="34" class="wulopay-accept-mark" style="display:inline-block;width:52px;height:34px;margin:0;float:none;max-height:none;" />',
+				esc_url( WC_HTTPS::force_https_url( $mark['src'] ) ),
+				esc_attr( $mark['label'] )
+			);
+		}
+		return sprintf(
+			'<div class="wulopay-accept" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;"><span class="wulopay-accept-label">%1$s</span>%2$s</div>',
+			esc_html__( 'We accept', 'wulopay-woocommerce' ),
+			$images
+		);
+	}
+
+	/** WooCommerce only opens the payment box for a description or fields; the row counts as content too. */
+	public function has_fields() {
+		return ! empty( self::accept_marks() );
+	}
+
+	/** The description, then the "We accept" row, in the box shown when the shopper picks WuloPay. */
+	public function payment_fields() {
+		$description = $this->get_description();
+		if ( '' !== (string) $description ) {
+			echo wp_kses_post( wpautop( wptexturize( $description ) ) );
+		}
+		echo self::accept_marks_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in accept_marks_html().
 	}
 
 	/**
