@@ -37,6 +37,8 @@ Not declared to WooCommerce Subscriptions: amount changes and multiple subscript
 
 **Branding and setup checks**: the gateway's `icon` is the square WuloPay mark (WooCommerce Payments list);
 `get_icon()` and the block label show the full logo at checkout (`wulopay_wc_checkout_logo` filter, '' for none).
+Under the method, a "We accept" row shows the Visa and Mastercard marks (setting `accept_marks`; filter
+`wulopay_wc_accept_marks`, a list of `['brand', 'label', 'src']`, empty for no row).
 `is_available()` needs: enabled, a store currency in `WuloPay_Gateway::CURRENCIES` (filter `wulopay_wc_currencies`), and a key for the selected environment. `needs_setup()` is true
 without a key, so WooCommerce shows "Action needed" and won't enable the method; `checkout_blockers()` lists the
 reasons on the settings page.

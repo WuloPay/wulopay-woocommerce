@@ -52,6 +52,8 @@ final class WuloPay_Blocks extends AbstractPaymentMethodType {
 			'description' => $this->get_setting( 'description' ),
 			'supports'    => $this->get_supported_features(),
 			'logo'        => (string) apply_filters( 'wulopay_wc_checkout_logo', WuloPay_Gateway::logo_url() ),
+			'acceptMarks' => WuloPay_Gateway::accept_marks(),
+			'acceptLabel' => __( 'We accept', 'wulopay-woocommerce' ),
 			'ready'       => $this->gateway_ready(),
 		);
 	}

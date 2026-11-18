@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,10 +71,19 @@ the key is entered.
 = Can I change the logo at checkout? =
 Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another URL, or an empty string for no logo.
 
+= Can I hide the "We accept" card logos? =
+Yes. Untick "We accept" logos in the WuloPay settings. Developers can change the list with the `wulopay_wc_accept_marks`
+filter (each entry has a brand, a label and an image URL; return an empty array for no row).
+
 = How do I go live? =
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.5.0 =
+* "We accept" with the Visa and Mastercard logos under WuloPay at checkout (classic and block), so shoppers see which
+  cards they can pay with. Switch it off in the WuloPay settings ("We accept" logos). Developers can change the logos
+  with the wulopay_wc_accept_marks filter.
 
 = 1.4.0 =
 * Namibian dollar (NAD), Botswana pula (BWP), Lesotho loti (LSL) and eSwatini lilangeni (SZL) as well as rand: WuloPay

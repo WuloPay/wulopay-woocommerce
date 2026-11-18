@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0
+- "We accept" row under the payment method (classic `payment_fields()` and the block `Content`): Visa and Mastercard
+  acceptance marks (`assets/images/card-visa.svg`, `card-mastercard.svg`). Setting `accept_marks` (default on) hides
+  it. Filter `wulopay_wc_accept_marks` gets and returns a list of `['brand', 'label', 'src']`; entries without a label
+  or image are dropped, and an empty list shows no row. `has_fields()` is true while there are marks, so the classic
+  payment box opens even without a description.
+
 ## 1.4.0
 - Store currencies NAD, BWP, LSL and SZL besides ZAR (`WuloPay_Gateway::CURRENCIES`, filter `wulopay_wc_currencies`).
   Sessions, plans and refunds already carry the order's currency. The settings page warns when a live store uses a

@@ -7,7 +7,38 @@
 
 	const settings = getSetting( 'wulopay_data', {} );
 	const title = decodeEntities( settings.title || 'Card (Visa, Mastercard)' );
-	const Content = () => createElement( 'p', null, decodeEntities( settings.description || '' ) );
+	const marks = Array.isArray( settings.acceptMarks ) ? settings.acceptMarks : [];
+
+	// "We accept" and the logo of each way to pay (none when the setting is off or the filter returns no marks).
+	const AcceptMarks = () =>
+		marks.length
+			? createElement(
+					'div',
+					{ className: 'wulopay-accept', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginTop: '8px' } },
+					createElement( 'span', { className: 'wulopay-accept-label' }, decodeEntities( settings.acceptLabel || 'We accept' ) ),
+					...marks.map( ( mark ) =>
+						createElement( 'img', {
+							key: mark.brand || mark.label,
+							src: mark.src,
+							alt: mark.label,
+							title: mark.label,
+							width: 52,
+							height: 34,
+							className: 'wulopay-accept-mark',
+							style: { display: 'inline-block', width: '52px', height: '34px', margin: 0 },
+						} )
+					)
+			  )
+			: null;
+
+	const Content = () =>
+		createElement(
+			'div',
+			null,
+			settings.description ? createElement( 'p', null, decodeEntities( settings.description ) ) : null,
+			createElement( AcceptMarks )
+		);
+
 	// Title on the left, WuloPay logo on the right (no logo when the wulopay_wc_checkout_logo filter returns '').
 	const Label = () =>
 		createElement(
