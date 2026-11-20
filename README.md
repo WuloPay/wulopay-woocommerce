@@ -35,6 +35,19 @@ WordPress admin, Plugins, Add New, Upload. Setup steps are in [readme.txt](readm
 
 Not declared to WooCommerce Subscriptions: amount changes and multiple subscriptions per order.
 
+**Saved cards** (`includes/class-wulopay-saved-cards.php`, setting `saved_cards`, off by default; the API key needs
+`wallet.read` and `wallet.write` besides the checkout scopes):
+
+| Step | What happens |
+|---|---|
+| Pay with a new card | Logged-in customer: the session carries `customerReference` (`wc-<site>-<user id>`) and `saveCard: true`; WuloPay's page offers to save the card. On payment the plugin reads `GET /Wallet/Customers/{ref}/Cards` and stores a `WC_Payment_Token_CC` per card (token = WuloPay card id). |
+| Pay with a saved card | The chosen token's card id goes in `cardId`; WuloPay's page shows the card and the shopper confirms with 3-D Secure. |
+| Add payment method | My Account opens a `mode: "save_card"` session (nothing charged); the return to Payment methods checks the session belongs to the customer and syncs the cards. |
+| Delete / make default | `woocommerce_payment_token_deleted` and `woocommerce_payment_token_set_default` call the Wallet API. |
+| Changed elsewhere | `card.saved`, `card.removed`, `card.expiring` and `card.expired` webhooks re-sync that customer's tokens. |
+
+Subscription sign-ups keep their own stored card (no `saveCard` or `cardId`).
+
 **Branding and setup checks**: the gateway's `icon` is the square WuloPay mark (WooCommerce Payments list);
 `get_icon()` and the block label show the full logo at checkout (`wulopay_wc_checkout_logo` filter, '' for none).
 Under the method, a "We accept" row shows the Visa and Mastercard marks (setting `accept_marks`; filter

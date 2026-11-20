@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0
+- Saved cards (`includes/class-wulopay-saved-cards.php`, setting `saved_cards`, default off). Logged-in customers save a
+  card on WuloPay's page and pay with it later. The gateway declares `tokenization` and `add_payment_method`; tokens are
+  `WC_Payment_Token_CC` with WuloPay's card id. A payment session offers to save the card (`saveCard`) or pays with the
+  chosen one (`cardId`, confirmed with 3-D Secure); "Add payment method" opens a `save_card` session and the return to
+  My Account, Payment methods checks it. Each customer is `wc-<site>-<user id>`. Tokens follow WuloPay's card list on
+  payment, on return and on `card.*` webhooks; deleting a card or making it the default in My Account does the same at
+  WuloPay. Block checkout: `showSavedCards`. Subscription sign-ups keep their own stored card.
+- Bundled wulopay-php 1.3.0 (`wallet`).
+
 ## 1.5.0
 - "We accept" row under the payment method (classic `payment_fields()` and the block `Content`): Visa and Mastercard
   acceptance marks (`assets/images/card-visa.svg`, `card-mastercard.svg`). Setting `accept_marks` (default on) hides

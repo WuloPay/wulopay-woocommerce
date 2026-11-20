@@ -21,7 +21,7 @@ use WuloPay\HttpClient\HttpClientInterface;
  */
 final class Client
 {
-    public const VERSION = '1.2.2';
+    public const VERSION = '1.3.0';
     public const SANDBOX_BASE_URL = 'https://sandbox.wulopay.com/api/v1';
 
     public readonly CheckoutSessions $checkoutSessions;
@@ -29,6 +29,7 @@ final class Client
     public readonly Subscriptions $subscriptions;
     public readonly Invoices $invoices;
     public readonly PaymentLinks $paymentLinks;
+    public readonly Wallet $wallet;
 
     private string $keyId;
     private string $secret;
@@ -62,6 +63,7 @@ final class Client
         $this->subscriptions = new Subscriptions($this);
         $this->invoices = new Invoices($this);
         $this->paymentLinks = new PaymentLinks($this);
+        $this->wallet = new Wallet($this);
     }
 
     /**

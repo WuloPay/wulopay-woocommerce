@@ -43,7 +43,11 @@ final class WuloPay_Blocks extends AbstractPaymentMethodType {
 
 	/** Features the block checkout matches against the cart's needs (WooCommerce Subscriptions adds its own). */
 	public function get_supported_features() {
-		return array_merge( array( 'products', 'refunds' ), WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array() );
+		return array_merge(
+			array( 'products', 'refunds' ),
+			WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array(),
+			WuloPay_Saved_Cards::enabled() ? array( 'tokenization' ) : array()
+		);
 	}
 
 	public function get_payment_method_data() {
@@ -55,6 +59,8 @@ final class WuloPay_Blocks extends AbstractPaymentMethodType {
 			'acceptMarks' => WuloPay_Gateway::accept_marks(),
 			'acceptLabel' => __( 'We accept', 'wulopay-woocommerce' ),
 			'ready'       => $this->gateway_ready(),
+			// Saved cards: the block checkout lists the customer's cards above the method; the save box is on WuloPay's page.
+			'savedCards'  => WuloPay_Saved_Cards::enabled() && is_user_logged_in(),
 		);
 	}
 

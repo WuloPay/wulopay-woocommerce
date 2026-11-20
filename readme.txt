@@ -4,7 +4,7 @@ Tags: payments, credit card, south africa, 3d secure, woocommerce
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,8 @@ WuloPay's secure payment page, pays (3-D Secure is handled there), and comes bac
 * Your branding on the payment page when WuloPay enables it for your account.
 * Works with WooCommerce Subscriptions: the card is stored with WuloPay at sign-up and every renewal is charged
   automatically, including free trials and sign-up fees.
+* Saved cards (optional): logged-in customers save a card on WuloPay's page and pay with it next time by picking it,
+  confirmed with 3-D Secure. They manage their cards under My Account, Payment methods.
 
 You need a WuloPay merchant account. Payments are in South African rand (ZAR), Namibian dollar (NAD), Botswana pula
 (BWP), Lesotho loti (LSL) or eSwatini lilangeni (SZL), the store's currency. The sandbox accepts all five; in live,
@@ -75,10 +77,22 @@ Yes. The `wulopay_wc_checkout_logo` filter returns the logo URL; return another 
 Yes. Untick "We accept" logos in the WuloPay settings. Developers can change the list with the `wulopay_wc_accept_marks`
 filter (each entry has a brand, a label and an image URL; return an empty array for no row).
 
+= How do saved cards work? =
+Tick "Saved cards" in the WuloPay settings; your API key needs the Saved Cards product as well as Hosted Checkout.
+When a logged-in customer pays with a new card, WuloPay's page offers to save it, and they decide there. Next time they
+pick the card at checkout and confirm on WuloPay's page with 3-D Secure. Under My Account, Payment methods they can add
+a card (nothing is charged), make one the default or delete one. The card number stays with WuloPay; your store keeps
+only the brand, the last 4 digits and the expiry date.
+
 = How do I go live? =
 WuloPay gives you live API keys and the live API address. Enter them, choose Live and place a small real order.
 
 == Changelog ==
+
+= 1.6.0 =
+* Saved cards: logged-in customers can save a card on WuloPay's page and pay with it next time by picking it at
+  checkout (confirmed with 3-D Secure). They add, delete and choose a default card under My Account, Payment methods.
+  Switch it on in the WuloPay settings ("Saved cards").
 
 = 1.5.0 =
 * "We accept" with the Visa and Mastercard logos under WuloPay at checkout (classic and block), so shoppers see which

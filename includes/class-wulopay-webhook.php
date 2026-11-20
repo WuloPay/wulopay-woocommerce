@@ -48,6 +48,11 @@ final class WuloPay_Webhook {
 			return new WP_REST_Response( array( 'received' => true ), 200 );
 		}
 
+		if ( 0 === strpos( $type, 'card.' ) ) {
+			WuloPay_Saved_Cards::webhook( is_array( $data_object ) ? $data_object : array() );
+			return new WP_REST_Response( array( 'received' => true ), 200 );
+		}
+
 		if ( 0 === strpos( $type, 'subscription.' ) ) {
 			WuloPay_Subscriptions::webhook( $type, (string) $event['id'], is_array( $data_object ) ? $data_object : array() );
 			return new WP_REST_Response( array( 'received' => true ), 200 );

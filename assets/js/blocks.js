@@ -58,6 +58,7 @@
 		edit: createElement( Content ),
 		// Listed in the editor whenever enabled; offered to shoppers only when the store is set up (currency, API key).
 		canMakePayment: () => settings.ready !== false,
-		supports: { features: settings.supports || [ 'products' ] },
+		// Saved cards are listed by WooCommerce; whether to save a new one is asked on WuloPay's page, not here.
+		supports: { features: settings.supports || [ 'products' ], showSavedCards: !! settings.savedCards, showSaveOption: false },
 	} );
 } )();
