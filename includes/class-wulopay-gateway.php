@@ -33,7 +33,11 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 		$this->method_description = __( 'Card payments (Visa, Mastercard) on WuloPay\'s secure payment page, with 3-D Secure. Card details never touch your site.', 'wulopay-woocommerce' );
 		$this->has_fields         = false;
 		$this->icon               = plugins_url( 'assets/images/wulopay-mark.svg', WULOPAY_WC_FILE );
-		$this->supports           = array_merge( array( 'products', 'refunds' ), WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array() );
+		$this->supports           = array_merge(
+			array( 'products', 'refunds' ),
+			WuloPay_Subscriptions::active() ? WuloPay_Subscriptions::SUPPORTS : array(),
+			WuloPay_Saved_Cards::enabled() ? array( 'tokenization', 'add_payment_method' ) : array()
+		);
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -67,6 +71,13 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 				'type'    => 'checkbox',
 				'label'   => __( 'Show the card logos shoppers can pay with under the payment method at checkout', 'wulopay-woocommerce' ),
 				'default' => 'yes',
+			),
+			'saved_cards'            => array(
+				'title'       => __( 'Saved cards', 'wulopay-woocommerce' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Let logged-in customers save cards and pay with them later', 'wulopay-woocommerce' ),
+				'description' => __( 'Customers save a card on WuloPay\'s payment page (they agree there) and see it at checkout and under My Account, Payment methods. Paying with a saved card is confirmed with 3-D Secure. Your API key needs the Saved Cards product as well as Hosted Checkout.', 'wulopay-woocommerce' ),
+				'default'     => 'no',
 			),
 			'environment'            => array(
 				'title'   => __( 'Environment', 'wulopay-woocommerce' ),
@@ -229,7 +240,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 
 	/** WooCommerce only opens the payment box for a description or fields; the row counts as content too. */
 	public function has_fields() {
-		return ! empty( self::accept_marks() );
+		return ! empty( self::accept_marks() ) || ( $this->supports( 'tokenization' ) && is_user_logged_in() );
 	}
 
 	/** The description, then the "We accept" row, in the box shown when the shopper picks WuloPay. */
@@ -239,6 +250,16 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 			echo wp_kses_post( wpautop( wptexturize( $description ) ) );
 		}
 		echo self::accept_marks_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in accept_marks_html().
+		// Saved cards: the customer's cards and "Use a new payment method" (WooCommerce's own list).
+		if ( $this->supports( 'tokenization' ) && is_checkout() && is_user_logged_in() ) {
+			$this->tokenization_script();
+			$this->saved_payment_methods();
+		}
+	}
+
+	/** My Account, Payment methods, Add payment method: a WuloPay page that saves a card without charging. */
+	public function add_payment_method() {
+		return WuloPay_Saved_Cards::add_payment_method();
 	}
 
 	/**
@@ -334,6 +355,10 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 					'name'  => '' !== $name ? substr( $name, 0, 120 ) : null,
 				)
 			);
+		}
+
+		if ( ! WuloPay_Subscriptions::is_signup( $order ) ) {
+			$params = WuloPay_Saved_Cards::session_params( $order, $params );
 		}
 
 		try {
@@ -537,6 +562,7 @@ class WuloPay_Gateway extends WC_Payment_Gateway {
 			)
 		);
 		self::log( 'Order ' . $order->get_id() . ' paid (session ' . $session['id'] . ', ' . $source . ').' );
+		WuloPay_Saved_Cards::after_payment( $order, $session );
 	}
 
 	/** Whether the store currency is one WuloPay takes. */
